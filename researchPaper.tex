@@ -1,0 +1,245 @@
+\documentclass[12pt]{article}
+\usepackage{amssymb}
+\usepackage{qtree}
+
+\renewcommand\thesubsection{\Alph{subsection}}
+
+\title{Implicit Encoding: Exponential Factorization and Information Transfer}
+\author{
+Brian Zachary Abel\\
+Department of Computer Science\\
+UT Austin\\
+\date{\today}
+}
+
+
+\begin{document}
+\maketitle
+
+\abstract
+We show a method where one can achieve exponential data compression,
+compressing and uncompressing in polynomial time with minimal space requirements.
+A c++ program using the method is developed and a 2 gigabyte file is compressed
+into 4 kilobytes, and then uncompressed with lossless data integrity.
+The example program is available on github here.
+A youtube summary is available here.
+
+\section*{Algorithm, in brief}
+All programs are, fundamentally, just numbers. Very large numbers, yes,
+but numbers. An unusually large program might have a terabyte of data.
+this would correspond to a number in the range of $2^{1000000000000}$,
+much bigger than the hypothetical googol, at $10^{100}$.
+
+If Bob and Alice wanted to communicate exceptionally large numbers (like a googol)
+to one another using only their fingers and counting,
+they might agree beforehand on a scheme like this:
+the left thumb, if raised, increases the base of the number system by one. Then
+for any given number, Bob could communicate a portion of it using base two, raise his
+left thumb several times, and suddenly all of his fingers would represent powers of five.
+His fingers would encode exponents: $5^{0},5^{1},5^{2},...$.
+
+We can generate relatively even distributions of large numbers by taking large exponents
+of primes and multiplying them together. So one could take the permutations of a list like
+[4,5,6,7,8,9]
+
+Remember when we said all programs are just numbers? Well we lied.
+Large binary numbers have 0's occur dispraportionately at the beginning of the number
+as you count upwards. The binaries for programs have a random distribution of 0's.sically, first I  solve this with logarithms and floating point
+2^x * 3^y * 5^z * 7^i ...
+find x,y,z and i so that the product has the same first digit as
+2^1000000 or some arbitrary large number
+but is otherwise as low as possible.
+
+above results in factorization problem which is np hard, will end up giving us
+floating point numbers in our representation...which uhm we don't want,
+neeed an exact representation damnit.
+multiply primes together, raise to exponent 1/(number primes)
+then solve this:
+(prime avg)^x = 2^10000000 (or some other big number)
+
+actually, solve with a heuristic: 3/2 = 1.5, 5/2 = 2.5, 7/2 = 3.5: assign powers in the
+lowest possible proportion that matches the heuristic. model the other powers as 2's.
+
+then there will be two different algorithms:
+
+one ``low latency, bad encoding'' that goes with whatever number is generated from that
+hopefully we will gain information from each round of the encoding, because it will certainly not
+halve the program in size on the first iteration :|
+
+This algorithm will have a small but nonzero chance of failing, unless I check to see if the remainder is negative.
+I am not sure if it will work.
+But it could.
+If the outcome is negative, terminate the algorithm.
+This will actually be the easier programming gauntlet.
+If it works well enough I will quit here write my paper, make my youtube videos, and leave the next part to someone else.
+
+
+one ``high latency,max encoding'' that goes like this to generate candidates to compare to number of that size, until it finds a good match:
+2^x+1*3^y * 5^z * 7^i
+2^(x+1)*3^(y+1) * 5^z * 7^i
+2^(x+2)*3^(y+1) * 5^z * 7^i
+2^(x+2)*3^(y+1) * 5^(z+1) * 7^i
+better idea: take differences between the numbers, use that to determine the
+rate at which they increment, 2 would be the base rate, 3 would incerement
+twice every 3 rounds, 5 would increment twice every 5 rounds, etc...
+have to compare performance before and after since that seems kind've hefty
+in terms of incrementing that counter and taking modulos to calculate that.
+If the outcome is negative, terminate the algorithm. store in encoding, but don't need
+to reduce any more, probably.
+
+In order to implement this algorithm I will have to delve into the gmp's big integer multiplication. Why?
+5
+x5
+25  (carry the 2)
+x5
+125
+
+etc. etc: I will want to rewrite it so that I can ignore (hold off) on all the carrying and compare the first digit to the output, then compute the second digit and compare, then compute the next digit, etc. etc.
+After finally choosing a number I will have to check for a negative remainder and account for it in the encoding.
+This will literally be hell on earth. Probably at least a month of life to get that functionality.
+
+there will be an engineering tradeoff, as the number of primes increases so does the time to compute each digit to compare as more multiplications are done. It will not be completely trivial since the primes will be carried to very large powers, and many digits are compared.
+
+
+
+
+
+you have a big number
+
+8*2^100000000 to the trillion (a terabyte)
+
+you subtract another big number from it,
+but this number you know all of it's factors, and all of it's factors are prime numbers with large exponents
+
+the representation of the number we create is just a series of exponents
+2^5*3^6*5^7*8^8
+so we encode 5,6,7,8
+and that represents a huge number, which we subtract from our other huge number
+
+if you just subtracted a 2^(trillion-1) from 2^(trillion) you'd have to do that a trillion-1 times to encode the number, so you'd end up with a bigger amount of space taken up than before,
+but basically whenever you do the subtraction with ``evenly distributed'' numbers you're storing a lot of information about all the other digits, not just the digit in the highest place.
+
+so you have a remainder and then you subtract a number from that, every time the number shrinks by about half
+and you store information about all of it's digits,
+
+so, even though the number that represents the program is technically 2^(trillion), it occupies about ~2^36
+bits. so since it's size (and not actual value) shrinks by (theoretically) ~half every time, it only take 36 rounds of these exponents to represent it. theoretically, I don't think that actual performance will match my hypothetical values at first if ever lol. But if you averaged it out I feel like that's what it would be but I don't actually know for sure lol.
+
+for larger values you need more primes to generate a good spread
+\section{Algorithm}
+Read the first n bits of the file.
+record the number of leading zeroes.
+file size in bits - number of leading zeroes:
+the 
+\section{Performance Tuning}
+The algorithm presents a large number of opportunities for performance tuning at pretty much
+every step.
+
+\subsection{Fun to think about}
+Some of the crazier ideas that've happened across the author's brain:
+
+It's possible that alien civlizations use of a similar algorithm for encoding all their
+data transmission is responsible for the fermi paradox.
+
+One could fit periodic (trig like) functions to the distribution of the digits in the binary and then describe those functions with coefficients. This would also require fitting to the
+encoded number though, and thus dramatically increase the time taken by the encoding
+step. But, in general it might also be possible to do some kind of fourrier-like decomposition
+to describe the file, using a similar implicit scheme. Fun to think about anyway.
+
+\section*{2.4.4}
+\subsection*{b}
+Find the ships launched prior to 1921.\\
+%T = $\sigma\textsubscript{launched$<=$1921}(Ships)$
+%Answer = $\pi\textsubscript{name}(T)$
+\Tree [.$\pi\textsubscript{name}$ [.$\sigma\textsubscript{launched$<=$1921}$ [.Ships ] ] ]
+
+\subsection*{e}
+List the name, displacement, and number of guns of the ships engaged in
+the battle of Guadalcanal.\\
+%S = $\sigma\textsubscript{battle$=$Guadacanal}(Outcomes)$\\
+%T = $\pi\textsubscript{ship}(S)$\\
+%U = Ships $cap$ T\\
+%V = $\pi\textsubscript{name,class}(U)$\\
+%W = Classes $\bowtie$ V\\
+%X = $\pi\textsubscript{name,displacement,numGuns}(W)$\\
+\Tree   [.$\pi\textsubscript{name,displacement,numGuns}$ [.$\bowtie$ [ Classes ] [.$\pi\textsubscript{name,class}$ [.$\cap$ [ Ships ] [.$\pi\textsubscript{ship}$ [.$\sigma\textsubscript{battle$=$Guadacanal}$ [.Outcomes ] ] ] ] ] ] ]  
+
+\subsection*{f}
+List all the capital ships mentioned in the database. (Remember that all
+these ships may not appear in the ships relation.)\\
+%need to join unique ships from battles and ships, every ship in the database is considered
+% a capital ship
+%S = $\rho\textsubscript{ship/name}(Ships)$\\
+%T = S $\bowtie$ Ships \\
+%U = $\pi\textsubscript{ship}(T)$\\
+%V = $S - U$\\
+%W = V $\bowtie$ Ships\\
+%Answer = $\pi\textsubscript{ship}(W)$\\
+\Tree [.$\bowtie$ [.Ships ] [.$-$ [.$\rho\textsubscript{ship/name}$ [.Ships ] ] [.$\pi\textsubscript{ship}$ [.$\bowtie$ [.Ships ] [.$\rho\textsubscript{ship/name}$ [.Ships ] ] ] ] ] ]
+
+\subsection*{h}
+Find those countries that had both battleships and battlecruisers.\\
+%$S=\sigma\textsubscript{type=bb}(Classes)$\\
+%$T=\pi\textsubscript{country}(S)$\\
+%$U=\sigma\textsubscript{type=bc}(Classes)$\\
+%$V=\pi\textsubscript{country}(U)$\\
+%$Answer = T \cap V$\\
+\Tree [.$\cap$ [.$\pi\textsubscript{country}$ [.$\sigma\textsubscript{type=bb}$  [.Classes ] ] ] [.$\pi\textsubscript{country}$ [.$\sigma\textsubscript{type=bc}$ [.Classes ] ] ] ]
+
+\subsection*{i}
+Find those ships that “lived to fight another day”; they were damaged in\\
+one battle, but later fought in another.\\
+%T = $\sigma\textsubscript{count(ship$>$2)}(Battles)$\\
+%Answer = $\pi\textsubscript{ship}(T)$\\
+\Tree [.$\pi\textsubscript{ship}$ [.$\sigma\textsubscript{count(ship$>$2)$ [.Battles ] ] ]
+
+\section*{2.4.7}
+\subsection*{a}
+max:n+m\\
+min:n or m, whichever is greater\\
+\subsection*{b}
+max:n*m\\
+min: n or m, whichever is greater\\
+\subsection*{c}
+max:n*m\\
+min:number of tuples in n that satisfy C or m, whichever is greater\\
+\subsection*{d}
+max:n\\
+min:0\\
+\section*{2.4.8}
+$\pi\textsubscript{a_{1},..,a_{n}}(R \bowtie S)$ where $a_{1},...,a_{n}$ are
+the attributes held in common between R and S.\\
+it follows then that another representation is in terms of more basic operations than
+the natural join:\\
+project the unique attributes in the union of R and S, after selecting the common attributes
+in the cross product.\\
+$\sigma\textsubscript{r.a1=s.a1,...,r.an=s.an}(\pi_{R \cup S}(R \times S))$\\
+where a1,...,an are the common attributes between s and r, and $R \cup S$ are the
+unique attributes between the two\\
+$\sigma\textsubscript{r.a1=s.a1,...,r.an=s.an}(\pi_{S \cup R}(S \times R))$\\
+where a1,...,an are the common attributes between s and r, and $S \cup R$ are the
+unique attributes between the two\\
+
+\section*{2.5.2}
+\subsection*{a}
+$\pi\textsubscript{bore$>$16in}(Classes) = \theta$
+\subsection*{b}
+$\pi\textsubscript{bore$>$14in}(\sigma\textsubscript{numGuns$>$9}(Classes)) = \theta$
+\subsection*{c}
+$\sigma\textsubscript{count(class)$>$2}(Classes)=\theta$
+\section*{2.3.2}
+\subsection*{a}
+CREATE TABLE Classes(
+class CHAR(1OO),
+type CHAR(2),
+numGuns INT,
+bore INT,
+displacement INT
+)
+\subsection*{c}
+CREATE TABLE Battles(
+name CHAR(1OO),
+date DATE 
+)
+
+\end{document}
